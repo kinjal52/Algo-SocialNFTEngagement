@@ -1,4 +1,4 @@
-### SocialNFT-Engagement
+# SocialNFT-Engagement
 
 ## Module Description  
 The **Social NFT Comments & Engagement** component enhances NFT marketplaces by allowing users to **comment, like, and discuss NFTs directly on the platform**. This feature fosters community engagement, improves user retention, and creates a more interactive NFT experience.
@@ -11,8 +11,6 @@ The **Social NFT Comments & Engagement** component enhances NFT marketplaces by 
 - **Real-Time Updates** – Comments and likes update instantly.  
 - **Moderation Tools** – NFT owners can manage discussions, delete comments, or report spam.  
  
----
-
 ## Problem Statement and Proposed Solution
 
 ### Problem Statement
@@ -24,8 +22,6 @@ The **Social NFT Comments & Engagement** component enhances NFT marketplaces by 
   -	Enable users to discuss, ask questions, and interact with NFTs directly on the marketplace.
   -	Increase buyer confidence by allowing real-time Q&A with creators.
   -	Build a stronger marketplace community, transforming NFTs from mere digital assets into meaningful, interactive experiences that connect and engage users.
-
----
 
 ## Technical Architecture Overview
 
@@ -45,8 +41,6 @@ The **Social NFT Comments & Engagement** component enhances NFT marketplaces by 
 4. Other users can **like, reply, or report** comments.  
 5. NFT creator can **respond to buyer questions** directly.  
 6. **Moderation tools** allow NFT owners to manage discussions.
-  
----
 
 ## Implementation plan and timeline
 | Phase       | Task                                           | Duration  |
@@ -57,8 +51,6 @@ The **Social NFT Comments & Engagement** component enhances NFT marketplaces by 
 | Phase 4     | Web3 wallet integration                        | 1 week    |
 | Phase 5     | Testing & Deployment                           | 1 week    |
 | **Total**   |                                                |**6 weeks**|
-
----
 
 ## Expected Impact and Outcomes
 
