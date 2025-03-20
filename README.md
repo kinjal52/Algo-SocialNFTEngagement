@@ -1,4 +1,4 @@
-# SocialNFT-Engagement
+## SocialNFT-Engagement
 
 ## Module Description  
 The **Social NFT Comments & Engagement** component enhances NFT marketplaces by allowing users to **comment, like, and discuss NFTs directly on the platform**. This feature fosters community engagement, improves user retention, and creates a more interactive NFT experience.
