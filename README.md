@@ -32,11 +32,11 @@ The **Social NFT Comments & Engagement** component enhances NFT marketplaces by 
 |---------------|----------------------------------------------------------|
 | **Frontend**  | Next.js (React) + ShadCN (UI Components)                 |
 | **Backend**   | Next.js API Routes (Node.js) + MongoDB (Database)        |
-| **Auth**      | Web3 Wallet Authentication (MetaMask, WalletConnect)     |
+| **Auth**      | Web3 Wallet Authentication                               |
 | **Storage**   | MongoDB (Comments, Likes) / IPFS (Decentralized Storage) |
 
 ### System Flow  
-1. User connects wallet (MetaMask, WalletConnect).  
+1. User connects wallet.  
 2. User posts a comment under an NFT.  
 3. Backend verifies wallet authentication and stores comment in MongoDB.  
 4. Other users can **like, reply, or report** comments.  
