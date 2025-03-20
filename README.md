@@ -8,7 +8,7 @@ The **Social NFT Comments & Engagement** component enhances NFT marketplaces by 
 - **Commenting System** – Users can leave comments on NFTs.  
 - **Like System** – Users can like comments to highlight valuable discussions.  
 - **Creator Q&A** – Buyers can ask questions, and NFT creators can respond.  
-- **Wallet-Based Authentication** – Users must sign in via Web3 wallets (MetaMask, WalletConnect).  
+- **Wallet-Based Authentication** – Users must sign in via Web3 wallets.  
 - **Real-Time Updates** – Comments and likes update instantly.  
 - **Moderation Tools** – NFT owners can manage discussions, delete comments, or report spam.  
  
