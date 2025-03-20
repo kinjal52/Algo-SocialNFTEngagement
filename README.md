@@ -7,7 +7,9 @@ Social NFT Comments & Engagement is built to increase Users can comment, like, a
  •	Creator Q&A – Buyers can ask creators about NFTs before purchasing.  
  •	Real-Time Updates – Comments appear instantly without page reloads.  
  •	Wallet-Based Login – Users authenticate using MetaMask, WalletConnect, etc.    
- •  Moderation Tools – NFT owners can delete/report unwanted comments.  
+ •  Moderation Tools – NFT owners can delete/report unwanted comments.
+ 
+---
 
 ### Problem Statement and Proposed Solution
 
@@ -20,6 +22,8 @@ Proposed Solution
   •	Enable users to discuss, ask questions, and interact with NFTs directly on the marketplace.
   •	Increase buyer confidence by allowing real-time Q&A with creators.
   •	Build a stronger marketplace community, transforming NFTs from mere digital assets into meaningful, interactive experiences that connect and engage users.
+
+---
 
 ### Technical Architecture Overview
 
@@ -39,6 +43,8 @@ System Flow
   •	Other users can like, reply, or report comments.
   •	NFT creator can respond to buyer questions directly in the comment section.
   •	Moderation tools allow NFT owners to manage discussions.
+  
+---
 
 ### Implementation plan and timeline
 | Phase       | Task                                           | Duration  |
@@ -49,6 +55,8 @@ System Flow
 | Phase 4     | Web3 wallet integration                        | 1 week    |
 | Phase 5     | Testing & Deployment                           | 1 week    |
 | **Total**   |                                                |**6 weeks**|
+
+---
 
 ### Expected Impact and Outcomes
 
