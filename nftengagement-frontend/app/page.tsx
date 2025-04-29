@@ -6,15 +6,21 @@ import { motion } from "framer-motion";
 import { Wallet, Play } from "lucide-react";
 import { useState } from "react";
 import { Bounce, toast } from "react-toastify";
+import { useRouter } from "next/navigation";
+
 
 export default function PeraConnect() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const router = useRouter();
+
 
   async function handleConnectWallet() {
     try {
       const peraWallet = new PeraWalletConnect();
       const accounts = await peraWallet.connect();
-      setWalletAddress(accounts[0]);
+      const address = accounts[0];
+      setWalletAddress(address);
+      localStorage.setItem("walletAddress", address);
       toast.success("Connected wallet address:"), {
         position: "top-right",
         autoClose: 5000,
@@ -26,6 +32,8 @@ export default function PeraConnect() {
         theme: "light",
         transition: Bounce,
       };
+      router.push(`/user/nft`);
+      
     } catch (error:any) {
       console.error("Wallet connection failed:", error);
       toast.error(error), {

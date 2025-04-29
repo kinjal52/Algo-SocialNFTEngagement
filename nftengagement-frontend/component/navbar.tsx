@@ -1,51 +1,44 @@
 "use client";
 
-import { ShoppingBag, Menu } from "lucide-react";
+import { Bell, ArrowRight, Search, Wallet } from "lucide-react";
 import Image from "next/image";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 
 export default function Navbar() {
   return (
-    <nav className="bg-[#0d0d0d] text-white py-4 shadow-md">
-      <div className="container mx-auto flex items-center justify-between px-4">
+    <header className="w-full bg-[#0b1320] border-[#1c2230] pt-4">
+      <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
+
         {/* Logo */}
         <div className="flex items-center gap-3">
-          <Image src="/logo-rarible.png" alt="Logo" width={36} height={36} />
-          <span className="text-xl font-bold tracking-wide">Rarible</span>
+          <Image src="/vercel.svg" alt="Logo" width={28} height={28} />
+          <span className="text-white text-lg font-semibold">NFT MarketPlace</span>
         </div>
 
-        {/* Center Nav */}
-        <div className="hidden lg:flex items-center gap-6 flex-1 mx-8">
-          <input
+        {/* Search Bar */}
+        <div className="flex items-center bg-[#1c2230] px-3 py-2 rounded-full text-sm text-gray-300">
+          <Search className="w-4 h-4 text-gray-400 mr-2" />
+          <Input
             type="text"
-            placeholder="Search for collections, NFTs or users"
-            className="w-full bg-[#1a1a1a] rounded-full px-5 py-2 text-sm placeholder-white/50 focus:outline-none transition-all border border-transparent focus:border-yellow-400"
+            placeholder="Search DeFi protocols"
+            className="bg-transparent outline-none w-full text-sm placeholder:text-gray-400 border-none focus:ring-0"
           />
-          <div className="flex items-center gap-5 text-sm text-white/80 font-medium">
-            {["Create", "Explore", "Sell"].map((item) => (
-              <span key={item} className="hover:text-white cursor-pointer transition-colors duration-200">
-                {item}
-              </span>
-            ))}
-            <span className="hover:text-white cursor-pointer flex items-center gap-1">
-              Drops
-              <span className="bg-[#2c2c2c] text-[10px] px-2 py-[2px] rounded-full font-bold text-white/60">
-                NEW
-              </span>
-            </span>
-          </div>
         </div>
 
-        {/* Right: Wallet & Icons */}
-        <div className="flex items-center gap-4">
-          <div className="bg-yellow-400 rounded-full w-10 h-10 hidden sm:block" />
-          <Button variant="outline" className="rounded-full text-sm font-semibold px-4 hover:bg-white hover:text-black transition">
+        {/* Buttons & Icons */}
+        <div className="flex items-center gap-6">
+          <Button className="bg-[#f3f4f6] hover:bg-[#e5e7eb] text-[#2563eb] px-4 py-2 rounded-md border border-[#2563eb] flex items-center gap-2">
+            <Wallet className="w-6 h-6" />
             Connect wallet
           </Button>
-          <ShoppingBag className="text-white" size={22} />
-          <Menu className="text-white lg:hidden cursor-pointer" size={26} />
+
+          <Bell className="w-5 h-5 text-white" />
         </div>
       </div>
-    </nav>
+      <div className="mt-5">
+        <hr />
+      </div>
+    </header>
   );
 }

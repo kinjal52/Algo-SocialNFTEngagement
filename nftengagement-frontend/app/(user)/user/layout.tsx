@@ -17,10 +17,13 @@ export default function AdminLayout({
         <main
             suppressHydrationWarning
             className={cn(
-                "min-h-screen bg-background font-sans antialiased"
+                "min-h-screen bg-background text-foreground font-sans antialiased"
             )}
         >
+            {/* <div className="mt-5"> */}
             <Navbar />
+            {/* </div> */}
+
             <div className="pt-18 px-4 container mx-auto">
                 <ScrollArea>{children}</ScrollArea>
             </div>

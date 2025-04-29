@@ -1,16 +1,14 @@
-// src/models/questionAnswer.js
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
+const nft = require("./nft");
 
-const QuestionAnswerSchema = new mongoose.Schema({
-  questionId: { type: Number, required: false },
-  assetId: { type: String, required: false },
-  askerAddress: { type: String, required: false },
-  ownerAddress: { type: String, required: false },
-  question: { type: String, required: false },
-  answer: { type: String },
-  createdAt: { type: Date, default: Date.now },
-  answeredAt: { type: Date },
-  // isAnswered: { type: Boolean, default: false }
+const questionAnswer = new mongoose.Schema({
+  nftId: { type: mongoose.Schema.Types.ObjectId, ref: "NFT", required: true }, // 👈 ADD THIS
+  askerAddress: { type: String, required: true },
+  recipientAddress: { type: String, required: false },
+  message: { type: String, required: true },
+  sentAt: { type: Date, default: Date.now },
+  ownerAddress :{ type: String, required: true },
+  isSellerResponse: { type: Boolean, default: false },
 });
 
-module.exports = mongoose.model('QuestionAnswer', QuestionAnswerSchema);
+module.exports = mongoose.model("Message", questionAnswer);

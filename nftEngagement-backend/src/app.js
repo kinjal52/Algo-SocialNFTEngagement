@@ -2,13 +2,20 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const { DB_URI } = require("./config");
+const path = require('path');
 
 require("dotenv").config();
 
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+app.use(cors({
+    origin: 'http://localhost:3001' // Explicitly allow frontend
+  }));app.use(express.json());
+
+const backendRoot = path.join(__dirname, '..'); 
+
+console.log("Root Directory:", backendRoot);
+app.use('/uploads', express.static(path.join(backendRoot, 'uploads')));
 
 // Connect to MongoDB
 mongoose
@@ -17,8 +24,8 @@ mongoose
     .catch(err => console.error("MongoDB connection error:", err));
 
 // Routes
-const qaRoutes = require("./routes/nftRoutes");
-app.use("/api/qa", qaRoutes);
+const nftRoutes = require("./routes/nftRoutes");
+app.use("/api/nft", nftRoutes);
 
 const PORT = 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
