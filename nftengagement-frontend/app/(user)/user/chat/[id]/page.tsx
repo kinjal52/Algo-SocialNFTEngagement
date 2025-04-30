@@ -72,27 +72,27 @@ export default function ChatPage() {
     useEffect(() => {
         const storedWallet = localStorage.getItem("walletAddress");
         console.log("storedWallet", storedWallet);
-        
+
         setWalletAddress(storedWallet);
 
         const fetchNftData = async () => {
             try {
-              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/nft/${nftid}`);
-              console.log("response", response);
-              if (!response.ok) {
-                throw new Error("Failed to fetch NFT");
-              }
-              const data = await response.json();
-              console.log("data", data); // Debug the raw response
-              // Expecting a single NFT object, not a paginated response
-              if (!data || typeof data !== "object" || !data._id) {
-                throw new Error("Invalid NFT data received");
-              }
-              setNft(data);
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/nft/${nftid}`);
+                console.log("response", response);
+                if (!response.ok) {
+                    throw new Error("Failed to fetch NFT");
+                }
+                const data = await response.json();
+                console.log("data", data); // Debug the raw response
+                // Expecting a single NFT object, not a paginated response
+                if (!data || typeof data !== "object" || !data._id) {
+                    throw new Error("Invalid NFT data received");
+                }
+                setNft(data);
             } catch (error) {
-              console.error("Error fetching NFT:", error);
+                console.error("Error fetching NFT:", error);
             }
-          };
+        };
         fetchNftData();
     }, [nftid]);
 
@@ -103,7 +103,9 @@ export default function ChatPage() {
 
         const fetchMessages = async () => {
             try {
-                const response = await fetch(`http://localhost:3000/api/nft/chat/${nftid}`);
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/nft/chat/${nftid}`);
+                console.log("chat response", response);
+
                 if (!response.ok) {
                     throw new Error("Failed to fetch messages");
                 }
@@ -134,12 +136,21 @@ export default function ChatPage() {
     }, [messages]);
 
     const handleSendMessage = async () => {
+        console.log("handleSendMessage called");
+        console.log("inputMessage", inputMessage);
+        console.log("nft", nft);
+        console.log("walletAddress", walletAddress);
+
+
         if (!inputMessage.trim() || !nft || !walletAddress) return;
 
         const isOwner = walletAddress === nft.ownerAddress;
+        console.log("isOwner", isOwner);
 
         try {
             if (isOwner) {
+                console.log("isOwner", isOwner);
+
                 // Owner replying to a question
                 // Find the latest question from the buyer to reply to
                 const latestQuestion = messages
@@ -160,6 +171,8 @@ export default function ChatPage() {
                         ownerAddress: walletAddress,
                     }),
                 });
+                console.log("response", response);
+
 
                 if (!response.ok) {
                     throw new Error("Failed to send reply");

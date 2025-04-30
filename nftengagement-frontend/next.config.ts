@@ -1,12 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: "standalone",
   images: {
     domains: ['localhost', 'vercel.svg'],
     remotePatterns: [
       {
         protocol: 'http',
         hostname: "**",
-        port: '3000',
+        port: '',
         pathname: '/uploads/**',
       },
     ],

@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const NFTSchema = new mongoose.Schema({
-  nftId: { type: mongoose.Schema.Types.ObjectId, ref: "NFT", required: true }, // 👈 ADD THIS
+  nftId: { type: mongoose.Schema.Types.ObjectId, ref: "NFT", required: false }, // 👈 ADD THIS
   name: { type: String, required: true },
   description: { type: String },
   price:{ type: Number, default: 0 }, 

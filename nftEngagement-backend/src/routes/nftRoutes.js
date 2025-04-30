@@ -6,7 +6,7 @@ const NFT = require("../models/nft");
 const QuestionAnswer = require("../models/questionAnswer");
 const upload = require("../config/multer");
 const { log } = require("console");
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'http://localhost:3001';
 // Health Check
 router.get("/", (req, res) => {
   res.json({ message: "NFT Q&A Home" });

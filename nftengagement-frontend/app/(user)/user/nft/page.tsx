@@ -33,7 +33,6 @@ export default async function UserNftPage() {
 
     let data = await res.json();
 
-    // Ensure shape consistency
     const nftData: Paginatednft = Array.isArray(data) ? { data } : data;
 
     return (
