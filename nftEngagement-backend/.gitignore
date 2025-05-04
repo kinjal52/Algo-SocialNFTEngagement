@@ -3,3 +3,5 @@ node_modules/
 
 # Ignore dependencies lock files (if not needed)
 package-lock.json
+
+.env*

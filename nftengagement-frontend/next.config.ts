@@ -9,9 +9,16 @@ const nextConfig = {
         hostname: "**",
         port: '',
         pathname: '/uploads/**',
+      },     
+      {
+        protocol: 'https',
+        hostname: 'ipfs.io',
+        port: '',
+        pathname: '/ipfs/**',
       },
     ],
   },
+  
 };
 
 module.exports = nextConfig;

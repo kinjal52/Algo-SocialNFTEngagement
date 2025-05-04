@@ -1,13 +1,16 @@
 const mongoose = require('mongoose');
 
-const NFTSchema = new mongoose.Schema({
-  nftId: { type: mongoose.Schema.Types.ObjectId, ref: "NFT", required: false }, // 👈 ADD THIS
-  name: { type: String, required: true },
-  description: { type: String },
-  price:{ type: Number, default: 0 }, 
-  ownerAddress: { type: String, required: true }, // Seller Wallet Address
-  image: { type: String, required: true }, // 🔥 New field for image URL
-  createdAt: { type: Date, default: Date.now },
-});
+const nftSchema = new mongoose.Schema({
+  assetId: { type: String, required: false, unique: true },
+  name: { type: String, default: 'Unnamed NFT' },
+  url: { type: String, default: null },
+  creator: { type: String, required: true },
+  ownerAddress: { type: String, required: true },
+  balance: { type: Number, default: 1 },
+  description: { type: String, default: 'No description available' },
+  verified: { type: Boolean, default: false },
+  minting: { type: String, default: 'Algorand Testnet' },
+  price: { type: String, default: '0 ALGO' }
+}, { timestamps: true });
 
-module.exports = mongoose.model('NFT', NFTSchema);
+module.exports = mongoose.model('NFT', nftSchema);

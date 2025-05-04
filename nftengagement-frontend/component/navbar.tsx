@@ -4,8 +4,18 @@ import { Bell, ArrowRight, Search, Wallet } from "lucide-react";
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const router = useRouter();
+
+
+  useEffect(() => {
+    const storedWallet = localStorage.getItem("walletAddress");
+    setWalletAddress(storedWallet);
+  }, []);
   return (
     <header className="mt-5 w-full bg-[#0b1320] border-[#1c2230] pt-4">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
@@ -28,9 +38,25 @@ export default function Navbar() {
 
         {/* Buttons & Icons */}
         <div className="flex items-center gap-6">
-          <button className="bg-[#c7c527] hover:bg-[#e5e7eb] text-[#2563eb] px-4 py-2 rounded-md border border-[#2563eb] flex items-center gap-2">
+          <button
+            className={`px-4 py-3 rounded-md flex items-center gap-2  ${walletAddress}`}
+            onClick={() => {
+              if (walletAddress) {
+                // Logout
+                localStorage.removeItem("walletAddress");
+                setWalletAddress(null);
+                router.push("/"); // redirect to login page
+              } else {
+                // Simulated connect (replace with real logic)
+                const dummyAddress = "0x1234...abcd";
+                localStorage.setItem("walletAddress", dummyAddress);
+                setWalletAddress(dummyAddress);
+              }
+            }}
+
+          >
             <Wallet className="w-6 h-6" />
-            Connect wallet
+            {walletAddress ? "Logout" : "Connect Wallet"}
           </button>
 
           <Bell className="w-5 h-5 text-white" />

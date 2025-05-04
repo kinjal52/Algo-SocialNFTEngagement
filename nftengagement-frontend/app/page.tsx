@@ -21,7 +21,7 @@ export default function PeraConnect() {
       const address = accounts[0];
       setWalletAddress(address);
       localStorage.setItem("walletAddress", address);
-      toast.success("Connected wallet address:"), {
+      toast.success("Wallet Connected.."), {
         position: "top-right",
         autoClose: 5000,
         hideProgressBar: false,
@@ -33,8 +33,8 @@ export default function PeraConnect() {
         transition: Bounce,
       };
       router.push(`/user/nft`);
-      
-    } catch (error:any) {
+
+    } catch (error: any) {
       console.error("Wallet connection failed:", error);
       toast.error(error), {
         position: "top-right",

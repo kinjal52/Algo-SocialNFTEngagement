@@ -5,6 +5,9 @@ import { BadgeCheck } from "lucide-react";
 import { Card, CardContent } from "@/component/ui/card";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Bounce, toast } from "react-toastify";
+import { io, Socket } from "socket.io-client";
+
 
 export interface nftData {
   _id: string;
@@ -22,15 +25,35 @@ export interface Paginatednft {
   data: nftData[];
 }
 
+
+
 export const NFTList = ({ nftData }: { nftData: Paginatednft }) => {
   const { data } = nftData;
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const router = useRouter();
+  const [notifications, setNotifications] = useState<{ [nftId: string]: number }>({});
+
 
   useEffect(() => {
     const storedWallet = localStorage.getItem("walletAddress");
     setWalletAddress(storedWallet);
+
+    if (storedWallet) {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/nft/notifications/${storedWallet}`)
+        .then((res) => res.json())
+        .then((data) => {
+          const notifMap: { [key: string]: number } = {};
+          data.forEach((item: any) => {
+            notifMap[item._id] = item.questionCount;
+          });
+          setNotifications(notifMap);
+        })
+        .catch((err) => console.error("Notification fetch error:", err));
+    }
   }, []);
+
+
+
 
   if (!data || data.length === 0) {
     return (
@@ -71,7 +94,7 @@ export const NFTList = ({ nftData }: { nftData: Paginatednft }) => {
                   <BadgeCheck className="w-4 h-4 text-yellow-400" />
                 </div>
                 <div className="text-sm text-white/70 mb-1 flex items-center gap-1">
-                  {nft.creator}
+                  {/* {nft.creator} */}
                   {nft.verified && <BadgeCheck size={14} className="text-yellow-400" />}
                 </div>
                 <div className="text-lg font-semibold truncate mb-2">{nft.name}</div>
@@ -82,20 +105,39 @@ export const NFTList = ({ nftData }: { nftData: Paginatednft }) => {
                     Minting Now
                   </div>
                   <div className="font-semibold text-white">
-                    {nft.price ? `${nft.price} algo` : "Free"}
+                    {nft.price}
                   </div>
                 </div>
 
                 {/* Conditional Button */}
                 {isOwner ? (
-                  <button className="w-full bg-blue-500 text-white py-2 mt-2 rounded hover:bg-blue-400 transition"
-                  onClick={() => router.push(`/user/chat/${nft._id}`)}>
+                  <button
+                    className="w-full bg-yellow-500 text-block py-2 mt-2 rounded hover:bg-yellow-400 transition"
+                    onClick={() => router.push(`/user/chat/${nft._id}`)}
+                  >
                     View Questions
                   </button>
                 ) : (
                   <button
-                    className=" mt-1 w-full bg-yellow-400 text-black py-2 rounded hover:bg-yellow-300 transition"
-                    onClick={() => router.push(`/user/chat/${nft._id}`)}
+                    className=" mt-1 w-full bg-yellow-400 text-block py-2 rounded hover:bg-yellow-300 transition"
+                    onClick={() => {
+                      if (!walletAddress) {
+                        toast.info("Please connect your wallet first"), {
+                          position: "top-right",
+                          autoClose: 5000,
+                          hideProgressBar: false,
+                          closeOnClick: true,
+                          pauseOnHover: true,
+                          draggable: true,
+                          progress: undefined,
+                          theme: "light",
+                          transition: Bounce,
+                        };
+                        router.push("/"); // your wallet connection page
+                      } else {
+                        router.push(`/user/chat/${nft._id}`);
+                      }
+                    }}
                   >
                     Ask Question
                   </button>

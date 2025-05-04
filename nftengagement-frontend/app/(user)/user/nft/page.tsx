@@ -11,6 +11,7 @@ export interface nftData {
   verified: boolean;
   minting: string;
   price: string;
+  assetId: number; // Added to match backend
 }
 
 export interface Paginatednft {
@@ -19,7 +20,9 @@ export interface Paginatednft {
 
 export default async function UserNftPage() {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/nft/allnfts`, {
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/nft/allnfts`;
+
+    const res = await fetch(apiUrl, {
       cache: "no-store",
     });
 
@@ -28,12 +31,41 @@ export default async function UserNftPage() {
     }
 
     if (!res.ok) {
-      throw new Error("Failed to fetch NFTs");
+      throw new Error(`Failed to fetch NFTs: ${res.status} ${res.statusText}`);
     }
 
-    let data = await res.json();
+    const data = await res.json();
 
-    const nftData: Paginatednft = Array.isArray(data) ? { data } : data;
+    const nftData: Paginatednft = {
+      data: Array.isArray(data)
+        ? data
+          .filter((nft) => nft && (nft._id || nft.id))
+          .map((nft) => {
+            let imageUrl = "/images/placeholder.jpg";
+            if (nft.url) {
+              if (nft.url.startsWith("ipfs://")) {
+                imageUrl = `https://ipfs.io/ipfs/${nft.url.replace("ipfs://", "").split("#")[0]}`;
+              } else if (nft.url.startsWith("http://") || nft.url.startsWith("https://")) {
+                imageUrl = nft.url;
+              }
+            }
+
+            return {
+              _id: nft._id || nft.id,
+              assetId: Number(nft.assetId),
+              creator: nft.creator || "Unknown",
+              ownerAddress: nft.creator,
+              name: nft.name || "Unnamed NFT",
+              image: imageUrl,
+              description: nft.description || "No description available",
+              verified: nft.verified ?? false,
+              minting: nft.minting || "Algorand Testnet",
+              price: nft.price || "0 ALGO",
+            };
+          })
+        : []
+    };
+
 
     return (
       <section suppressHydrationWarning>

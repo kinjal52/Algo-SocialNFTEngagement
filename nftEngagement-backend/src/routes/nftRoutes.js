@@ -1,46 +1,121 @@
+
 const express = require("express");
 const router = express.Router();
-const crypto = require('crypto');
-const { sendTransactionWithNote, getNFTOwner } = require("../services/algorandService");
+const algosdk = require("algosdk");
 const NFT = require("../models/nft");
 const QuestionAnswer = require("../models/questionAnswer");
-const upload = require("../config/multer");
-const { log } = require("console");
-const BASE_URL = 'http://localhost:3001';
-// Health Check
-router.get("/", (req, res) => {
-  res.json({ message: "NFT Q&A Home" });
-});
+const upload = require("../config/multer")
+const FormData = require('form-data');
+const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 
-// 1. Create NFT (admin using Postman)
-router.post("/create", upload.single('image'), async (req, res) => {
+
+// Handle BigInt serialization
+BigInt.prototype.toJSON = function () { return this.toString() };
+
+function getAlgodClient(network = 'testnet') {
+  const servers = {
+    testnet: 'https://testnet-api.algonode.cloud',
+    mainnet: 'https://mainnet-api.algonode.cloud'
+  };
+  return new algosdk.Algodv2('', servers[network], 443);
+}
+
+router.post('/create-nft', upload.single('image'), async (req, res) => {
+  let txId;
   try {
-    const { name, description, ownerAddress, price } = req.body;
+    const {
+      name,
+      unitName,
+      note = "Algorand NFT",
+      network = "testnet",
+      price,
+    } = req.body;
 
-    console.log("Request body:", req.body);
-
-
-    if (!name || !ownerAddress || !req.file || !price) {
-      return res.status(400).json({ error: "Name, OwnerAddress,price and Image are required" });
+    // Validate fields
+    if (!name || !unitName || !req.file) {
+      return res.status(400).json({ success: false, error: "Missing required fields or image" });
     }
 
-    // const imagePath = '/public/nft/' + req.file.filename;
-    const imagePath = `${BASE_URL}/uploads/${req.file.filename}`; // Full URL
-    console.log("imagePath:", imagePath);
+    // Upload to Pinata
+    const filePath = req.file.path;
+    const fileStream = fs.createReadStream(filePath);
+    const data = new FormData();
+    data.append('file', fileStream);
 
-    const newNFT = new NFT({
-      name,
-      description,
-      ownerAddress,
-      price,
-      image: imagePath,
+    const pinataResponse = await axios.post('https://api.pinata.cloud/pinning/pinFileToIPFS', data, {
+      maxContentLength: Infinity,
+      headers: {
+        ...data.getHeaders(),
+        pinata_api_key: process.env.PINATA_API_KEY,
+        pinata_secret_api_key: process.env.PINATA_SECRET_API_KEY,
+      }
     });
 
-    await newNFT.save();
-    res.status(201).json(newNFT);
+    const ipfsHash = pinataResponse.data.IpfsHash;
+    const assetURL = `ipfs://${ipfsHash}`;
+
+    // Clean up temp file
+    fs.unlinkSync(filePath);
+
+    const account = algosdk.mnemonicToSecretKey(process.env.MNEMONIC);
+    console.log("account", account.addr);
+
+    const algodClient = getAlgodClient(network);
+    const suggestedParams = await algodClient.getTransactionParams().do();
+
+    const txn = algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
+      sender: account.addr,
+      suggestedParams,
+      assetName: name,
+      unitName: unitName,
+      assetURL,
+      manager: account.addr,
+      reserve: account.addr,
+      freeze: account.addr,
+      clawback: account.addr,
+      total: 1,
+      decimals: 0,
+      note: new TextEncoder().encode(note),
+      defaultFrozen: false
+    });
+
+    const signedTxn = txn.signTxn(account.sk);
+    txId = txn.txID().toString();
+    await algodClient.sendRawTransaction(signedTxn).do();
+    const result = await algosdk.waitForConfirmation(algodClient, txId, 10);
+
+    if (!result.assetIndex) {
+      throw new Error("Asset creation failed - no asset ID returned");
+    }
+
+    // ✅ Save to DB
+    await NFT.create({
+      assetId: result.assetIndex.toString(),
+      name,
+      url: assetURL,
+      ownerAddress: account.addr.toString(),
+      description: note,
+      minting: 'Algorand Testnet',
+      price: price,
+      creator: account.addr.toString()
+    });
+
+    res.json({
+      success: true,
+      assetId: result.assetIndex,
+      transactionId: txId,
+      explorerUrl: `https://lora.algokit.io/testnet/asset/${result.assetIndex}`
+    });
+
   } catch (error) {
-    console.error("Error creating NFT:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error(`Error in transaction ${txId || 'N/A'}:`, error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      transactionId: txId || 'N/A',
+    });
   }
 });
 
@@ -71,6 +146,7 @@ router.get("/:nftId", async (req, res) => {
   }
 });
 
+
 // 4. Ask a Question
 router.post("/ask", async (req, res) => {
   try {
@@ -99,6 +175,14 @@ router.post("/ask", async (req, res) => {
     });
 
     await qa.save();
+    
+    req.io.to(nftId).emit('new-question', {
+      nftId,
+      askerAddress,
+      message,
+      createdAt: qa.createdAt,
+      _id: qa._id, // Include _id for questionId
+    });
     console.log("Question saved:", qa);
 
     // const hash = crypto.createHash("sha256").update(message).digest("hex");
@@ -137,6 +221,20 @@ router.post("/reply", async (req, res) => {
     });
 
     await reply.save();
+    console.log(`Emitting new-reply to room ${reply.nftId}:`, {
+      nftId: reply.nftId,
+      message: reply.message,
+      ownerAddress,
+      createdAt: reply.createdAt,
+      _id: reply._id,
+    });
+    req.io.to(reply.nftId).emit('new-reply', {
+      nftId: reply.nftId,
+      message: reply.message,
+      ownerAddress,
+      createdAt: reply.createdAt,
+      _id: reply._id,
+    });
     res.json({ message: "Reply saved", data: reply });
   } catch (error) {
     console.error("Error replying:", error);
@@ -157,6 +255,11 @@ router.get("/chat/:nftId", async (req, res) => {
     const messages = await QuestionAnswer.find({ nftId }).sort({ sentAt: 1 }); // oldest first
     console.log("messages", messages);
 
+    req.io.on('connection', (socket) => {
+      socket.join(nftId); // Join room for specific NFT
+      console.log(`User joined room ${nftId}`);
+    });
+
     res.status(200).json(messages);
   } catch (error) {
     console.error("Error fetching messages:", error);
@@ -164,5 +267,5 @@ router.get("/chat/:nftId", async (req, res) => {
   }
 });
 
-
 module.exports = router;
+
