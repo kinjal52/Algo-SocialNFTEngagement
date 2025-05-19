@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bounce, toast } from "react-toastify";
 import { io, Socket } from "socket.io-client";
+import { Button } from "../ui/button";
 
 
 export interface nftData {
@@ -111,15 +112,17 @@ export const NFTList = ({ nftData }: { nftData: Paginatednft }) => {
 
                 {/* Conditional Button */}
                 {isOwner ? (
-                  <button
-                    className="w-full bg-yellow-500 text-block py-2 mt-2 rounded hover:bg-yellow-400 transition"
+                  <Button
+                    style={{ backgroundColor: "salmon", color: "black" }}
+                    className="w-full py-2 mt-3 rounded "
+                    // className="w-full bg-yellow-500 text-block py-2 mt-2 rounded hover:bg-yellow-400 transition"
                     onClick={() => router.push(`/user/chat/${nft._id}`)}
                   >
                     View Questions
-                  </button>
+                  </Button>
                 ) : (
-                  <button
-                    className=" mt-1 w-full bg-yellow-400 text-block py-2 rounded hover:bg-yellow-300 transition"
+                  <Button
+                    className="w-full bg-yellow-400 text-block py-2 rounded hover:bg-yellow-300 transition"
                     onClick={() => {
                       if (!walletAddress) {
                         toast.info("Please connect your wallet first"), {
@@ -140,8 +143,10 @@ export const NFTList = ({ nftData }: { nftData: Paginatednft }) => {
                     }}
                   >
                     Ask Question
-                  </button>
+                  </Button>
                 )}
+
+
               </CardContent>
             </Card>
           );

@@ -6,16 +6,15 @@ const { Server } = require("socket.io");
 const { DB_URI } = require("./config");
 const path = require("path");
 require("dotenv").config();
+const { initSocket } = require('./socket');
+const { getIO } = require('./socket');
+
 
 const app = express();
 const server = http.createServer(app); 
-const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:3000",
-    methods: ["GET", "POST"],
-    credentials: true,
-  },
-});
+
+initSocket(server);
+
 
 // Middleware
 app.use(cors({ origin: "http://localhost:3000" }));
@@ -33,27 +32,15 @@ mongoose
   .catch((err) => console.error("MongoDB connection error:", err));
 
 
+
 app.use((req, res, next) => {
-  req.io = io; // Attach `io` to the request object
+  req.io = getIO();
   next();
 });
 
 // Routes
 const nftRoutes = require("./routes/nftRoutes");
 app.use("/api/nft", nftRoutes);
-
-io.on('connection', (socket) => {
-  console.log('A user connected:', socket.id);
-
-  // Handle disconnection
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-  });
-  socket.on('join-room', (nftId) => {
-    socket.join(nftId);
-    console.log(`User joined room ${nftId}`);
-  });
-});
 
 // Start the server
 const PORT = 3001;

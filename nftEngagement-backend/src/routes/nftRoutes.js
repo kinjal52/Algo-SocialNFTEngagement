@@ -11,6 +11,7 @@ const fs = require('fs');
 const path = require('path');
 
 
+
 // Handle BigInt serialization
 BigInt.prototype.toJSON = function () { return this.toString() };
 
@@ -175,15 +176,10 @@ router.post("/ask", async (req, res) => {
     });
 
     await qa.save();
-    
-    req.io.to(nftId).emit('new-question', {
-      nftId,
-      askerAddress,
-      message,
-      createdAt: qa.createdAt,
-      _id: qa._id, // Include _id for questionId
-    });
-    console.log("Question saved:", qa);
+    const io = req.io;
+    io.to(nftId).emit("newMessage", qa); // for ask route
+
+
 
     // const hash = crypto.createHash("sha256").update(message).digest("hex");
     // const txId = await sendTransactionWithNote(hash);
@@ -213,7 +209,7 @@ router.post("/reply", async (req, res) => {
     }
 
     const reply = new QuestionAnswer({
-      nftId: original.nftId,
+      nftId: original.nftId.toString(),
       askerAddress: original.askerAddress,
       ownerAddress: original.ownerAddress,
       message: answer,
@@ -221,20 +217,15 @@ router.post("/reply", async (req, res) => {
     });
 
     await reply.save();
-    console.log(`Emitting new-reply to room ${reply.nftId}:`, {
-      nftId: reply.nftId,
-      message: reply.message,
-      ownerAddress,
-      createdAt: reply.createdAt,
-      _id: reply._id,
-    });
-    req.io.to(reply.nftId).emit('new-reply', {
-      nftId: reply.nftId,
-      message: reply.message,
-      ownerAddress,
-      createdAt: reply.createdAt,
-      _id: reply._id,
-    });
+
+
+    const io = req.io;
+    // io.to(original.nftId).emit("newMessage", reply); // for reply route
+    console.log("Emitting reply to room:", original.nftId.toString(), reply);
+io.to(original.nftId.toString()).emit("newMessage", reply);
+
+
+
     res.json({ message: "Reply saved", data: reply });
   } catch (error) {
     console.error("Error replying:", error);
@@ -255,10 +246,6 @@ router.get("/chat/:nftId", async (req, res) => {
     const messages = await QuestionAnswer.find({ nftId }).sort({ sentAt: 1 }); // oldest first
     console.log("messages", messages);
 
-    req.io.on('connection', (socket) => {
-      socket.join(nftId); // Join room for specific NFT
-      console.log(`User joined room ${nftId}`);
-    });
 
     res.status(200).json(messages);
   } catch (error) {

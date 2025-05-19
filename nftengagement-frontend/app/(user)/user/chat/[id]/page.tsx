@@ -1,127 +1,47 @@
-//chat not workd
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
 import { Send, ArrowLeft } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
-import { nftData, Paginatednft } from "@/app/(user)/user/nft/page"; // Adjust the import path as needed
 import io from "socket.io-client";
-
-const socket = io(process.env.NEXT_PUBLIC_API_URL, {
-    reconnection: true,
-    reconnectionAttempts: 5,
-    transports: ["websocket", "polling"],
-});
-
+import { nftData } from "@/app/(user)/user/nft/page"; // Adjust path as needed
 
 type Message = {
     text: string;
     sender: "buyer" | "owner";
     timestamp: string;
     isSellerResponse?: boolean;
-    questionId?: string; // For replies
-};
-
-type ChatPageProps = {
-    params: { nftId: string };
+    questionId?: string;
 };
 
 export default function ChatPage() {
-
     const router = useRouter();
     const [nft, setNft] = useState<nftData | null>(null);
     const [walletAddress, setWalletAddress] = useState<string | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputMessage, setInputMessage] = useState("");
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const socketRef = useRef<any>(null);
     const param = useParams<{ id: string }>();
-
     const nftid = param.id;
 
+    // Initialize WebSocket connection
     useEffect(() => {
-        socket.on("connect", () => {
-            console.log("Connected to Socket.IO server:", socket.id);
-        });
-        socket.on("connect_error", (error) => {
-            console.error("Socket.IO connection error:", error);
-        });
-        socket.on("disconnect", () => {
-            console.log("Disconnected from Socket.IO server");
-        });
+        socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001");
 
         return () => {
-            socket.off("connect");
-            socket.off("connect_error");
-            socket.off("disconnect");
+            socketRef.current.disconnect();
         };
     }, []);
 
     useEffect(() => {
-        if (!nftid) {
-            console.error("nftid is undefined");
-            return;
-        }
-
-      
-        socket.emit("join-room", nftid);
-
-        // Listen for new questions
-        socket.on("new-question", (data) => {
-            console.log("Received new-question:", data);
-            const newMessage: Message = {
-                text: data.message,
-                sender: "buyer",
-                timestamp: new Date(data.createdAt).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                }),
-                isSellerResponse: false,
-                questionId: data._id,
-            };
-            setMessages((prev) => [...prev, newMessage]);
-        });
-
-        // Listen for new replies
-        socket.on("new-reply", (data) => {
-            console.log("Received new-reply:", data);
-            const newMessage: Message = {
-                text: data.message,
-                sender: "owner",
-                timestamp: new Date(data.createdAt).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                }),
-                isSellerResponse: true,
-                questionId: data._id,
-            };
-            setMessages((prev) => [...prev, newMessage]);
-        });
-
-        return () => {
-            console.log("Leaving room:", nftid);
-            socket.emit("leave-room", nftid);
-            socket.off("new-question");
-            socket.off("new-reply");
-        };
-    }, [nftid]);
-
-
-    useEffect(() => {
         const storedWallet = localStorage.getItem("walletAddress");
-
         setWalletAddress(storedWallet);
 
         const fetchNftData = async () => {
             try {
                 const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/nft/${nftid}`);
-                if (!response.ok) {
-                    throw new Error("Failed to fetch NFT");
-                }
                 const data = await response.json();
-                if (!data || typeof data !== "object" || !data._id) {
-                    throw new Error("Invalid NFT data received");
-                }
                 setNft(data);
             } catch (error) {
                 console.error("Error fetching NFT:", error);
@@ -130,20 +50,16 @@ export default function ChatPage() {
         fetchNftData();
     }, [nftid]);
 
-
-    // Fetch chat messages
+    // Fetch chat messages and set up socket room
     useEffect(() => {
-        if (!nft || !walletAddress) return;
+        if (!nft || !walletAddress || !socketRef.current) return;
+
+        socketRef.current.emit("join_nft_room", nftid);
 
         const fetchMessages = async () => {
             try {
                 const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/nft/chat/${nftid}`);
-
-                if (!response.ok) {
-                    throw new Error("Failed to fetch messages");
-                }
                 const data = await response.json();
-                // Map backend data to frontend Message format
                 const formattedMessages: Message[] = data.map((msg: any) => ({
                     text: msg.message,
                     sender: msg.isSellerResponse ? "owner" : "buyer",
@@ -152,7 +68,7 @@ export default function ChatPage() {
                         minute: "2-digit",
                     }),
                     isSellerResponse: msg.isSellerResponse,
-                    questionId: msg._id, // Store questionId for replies
+                    questionId: msg._id,
                 }));
                 setMessages(formattedMessages);
             } catch (error) {
@@ -162,47 +78,28 @@ export default function ChatPage() {
 
         fetchMessages();
 
-        socket.emit("join-room", nftid);
-
-        // Listen for new questions
-        socket.on("new-question", (data) => {
-            const newMessage: Message = {
-                text: data.message,
-                sender: "buyer",
-                timestamp: new Date(data.createdAt).toLocaleTimeString([], {
+        // Listen for new messages via socket
+        socketRef.current.on("newMessage", (msg: any) => {
+            console.log("Received message via socket:", msg);
+            if (msg.nftId !== nftid) return;
+            const newMsg: Message = {
+                text: msg.message,
+                sender: msg.isSellerResponse ? "owner" : "buyer",
+                timestamp: new Date(msg.sentAt).toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit",
                 }),
-                isSellerResponse: false,
-                questionId: data._id, // Adjust based on backend response
+                isSellerResponse: msg.isSellerResponse,
+                questionId: msg._id,
             };
-            setMessages((prev) => [...prev, newMessage]);
+            setMessages((prev) => [...prev, newMsg]);
         });
 
-        // Listen for new replies
-        socket.on("new-reply", (data) => {
-            const newMessage: Message = {
-                text: data.message,
-                sender: "owner",
-                timestamp: new Date(data.createdAt).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                }),
-                isSellerResponse: true,
-                questionId: data._id, // Adjust based on backend response
-            };
-            setMessages((prev) => [...prev, newMessage]);
-        });
-
-        // Cleanup Socket.IO listeners
         return () => {
-            socket.off("new-question");
-            socket.off("new-reply");
+            socketRef.current.off("newMessage");
         };
-
     }, [nft, walletAddress, nftid]);
 
-    // Auto-scroll to the latest message
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
@@ -214,12 +111,11 @@ export default function ChatPage() {
 
         try {
             if (isOwner) {
-                // Owner replying
                 const latestQuestion = messages
                     .filter((msg) => !msg.isSellerResponse)
                     .slice(-1)[0];
 
-                if (!latestQuestion || !latestQuestion.questionId) {
+                if (!latestQuestion?.questionId) {
                     alert("No question to reply to.");
                     return;
                 }
@@ -234,33 +130,8 @@ export default function ChatPage() {
                     }),
                 });
 
-                if (!response.ok) {
-                    throw new Error("Failed to send reply");
-                }
-
-                const replyData = await response.json();
-
-                const newMessage: Message = {
-                    text: inputMessage,
-                    sender: "owner",
-                    timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-                    isSellerResponse: true,
-                    questionId: replyData.data._id,
-                };
-                console.log("newMessage,", newMessage);
-
-
-                // Update local UI
-                setMessages((prev) => [...prev, newMessage]);
-
-                //  Emit to Socket.IO
-                socket.emit("new-reply", {
-                    roomId: nftid,
-                    message: newMessage,
-                });
-
+                if (!response.ok) throw new Error("Failed to send reply");
             } else {
-                // Buyer asking
                 const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/nft/ask`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -271,27 +142,7 @@ export default function ChatPage() {
                     }),
                 });
 
-                if (!response.ok) {
-                    throw new Error("Failed to send question");
-                }
-
-                const questionData = await response.json();
-
-                const newMessage: Message = {
-                    text: inputMessage,
-                    sender: "buyer",
-                    timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-                    isSellerResponse: false,
-                    questionId: questionData._id,
-                };
-
-                setMessages((prev) => [...prev, newMessage]);
-
-                //  Emit to Socket.IO
-                socket.emit("new-question", {
-                    roomId: nftid,
-                    message: newMessage,
-                });
+                if (!response.ok) throw new Error("Failed to send question");
             }
 
             setInputMessage("");
@@ -300,9 +151,6 @@ export default function ChatPage() {
             alert("Failed to send message. Please try again.");
         }
     };
-
-
-
 
     if (!nft) {
         return (
@@ -314,7 +162,6 @@ export default function ChatPage() {
 
     return (
         <div className="min-h-screen bg-[#121212] text-white flex flex-col">
-            {/* Chat Header */}
             <div className="flex items-center p-4 bg-[#1A1A1A] border-b border-gray-700">
                 <button onClick={() => router.back()} className="mr-4 text-gray-400 hover:text-white">
                     <ArrowLeft size={24} />
@@ -327,19 +174,15 @@ export default function ChatPage() {
                 </div>
             </div>
 
-            {/* Chat Messages */}
             <div className="flex-1 overflow-y-auto p-4 bg-[#1A1A1A]">
                 {messages.map((message, index) => (
                     <div
                         key={index}
-                        className={`flex ${message.sender === "buyer" ? "justify-start" : "justify-end"
-                            } mb-3`}
+                        className={`flex ${message.sender === "buyer" ? "justify-start" : "justify-end"} mb-3`}
                     >
                         <div
-                            className={`max-w-[70%] p-3 rounded-lg ${message.sender === "buyer"
-                                ? "bg-gray-700 text-white"
-                                : "bg-green-600 text-white"
-                                }`}
+                            className={`max-w-[70%] p-3 rounded-lg ${message.sender === "buyer" ? "bg-gray-700" : "bg-green-600"
+                                } text-white`}
                         >
                             <p>{message.text}</p>
                             <p className="text-xs text-gray-400 mt-1">{message.timestamp}</p>
@@ -349,7 +192,6 @@ export default function ChatPage() {
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Message Input */}
             <div className="p-4 border-t border-gray-700 bg-[#1A1A1A] flex items-center gap-2">
                 <input
                     type="text"
