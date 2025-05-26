@@ -2,12 +2,12 @@
 
 import Image from "next/image";
 import { BadgeCheck } from "lucide-react";
-import { Card, CardContent } from "@/component/ui/card";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bounce, toast } from "react-toastify";
 import { io, Socket } from "socket.io-client";
 import { Button } from "../ui/button";
+import { Card, CardContent } from "../ui/card";
 
 
 export interface nftData {

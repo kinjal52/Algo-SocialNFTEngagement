@@ -1,5 +1,5 @@
-import Navbar from "@/component/navbar";
-import { ScrollArea } from "@/component/ui/scrollarea";
+import Navbar from "@/components/navbar";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
 

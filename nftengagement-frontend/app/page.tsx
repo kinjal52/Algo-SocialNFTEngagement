@@ -1,12 +1,12 @@
 "use client";
 
-import { Button } from "@/component/ui/button";
 import { PeraWalletConnect } from "@perawallet/connect";
 import { motion } from "framer-motion";
 import { Wallet, Play } from "lucide-react";
 import { useState } from "react";
 import { Bounce, toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 
 export default function PeraConnect() {

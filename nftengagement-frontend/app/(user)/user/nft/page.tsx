@@ -1,4 +1,4 @@
-import { NFTList } from "@/component/userComponent/nftData";
+import { NFTList } from "@/components/userComponent/nftData";
 import { redirect } from "next/navigation";
 
 export interface nftData {
