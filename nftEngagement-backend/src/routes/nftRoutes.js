@@ -90,7 +90,6 @@ router.post('/create-nft', upload.single('image'), async (req, res) => {
       throw new Error("Asset creation failed - no asset ID returned");
     }
 
-    // ✅ Save to DB
     await NFT.create({
       assetId: result.assetIndex.toString(),
       name,
@@ -264,6 +263,23 @@ router.get("/chat/:nftId", async (req, res) => {
   } catch (error) {
     console.error("Error fetching messages:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+//7. Get all buyer list for specific NFT
+router.get("/:nftId/buyers", async (req, res) => {
+  try {
+    const { nftId } = req.params;
+
+    const buyers = await QuestionAnswer.aggregate([
+      { $match: { nftId: new mongoose.Types.ObjectId(nftId) } },
+      { $group: { _id: "$askerAddress" } }
+    ]);
+
+    res.json(buyers.map(b => b._id));
+  } catch (err) {
+    console.error("Failed to fetch buyers", err);
+    res.status(500).json({ error: "Failed to fetch buyers" });
   }
 });
 
