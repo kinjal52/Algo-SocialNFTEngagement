@@ -2,7 +2,6 @@
 const nextConfig = {
   output: "standalone",
   images: {
-    domains: ['localhost', 'vercel.svg'],
     remotePatterns: [
       {
         protocol: 'http',
