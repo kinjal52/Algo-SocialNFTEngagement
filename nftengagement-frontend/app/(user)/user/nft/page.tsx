@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NFTList } from "@/components/userComponent/nftData";
 import { redirect } from "next/navigation";
 

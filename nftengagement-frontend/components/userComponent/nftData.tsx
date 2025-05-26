@@ -113,16 +113,16 @@ export const NFTList = ({ nftData }: { nftData: Paginatednft }) => {
                 {/* Conditional Button */}
                 {isOwner ? (
                   <Button
-                    style={{ backgroundColor: "salmon", color: "black" }}
-                    className="w-full py-2 mt-3 rounded "
-                    // className="w-full bg-yellow-500 text-block py-2 mt-2 rounded hover:bg-yellow-400 transition"
-                    onClick={() => router.push(`/user/chat/${nft._id}`)}
+                    // style={{ backgroundColor: "salmon", color: "black" }}
+                    // className="w-full py-2 mt-3 rounded "
+                    className="w-full bg-pink-400 text-block py-2 mt-2 rounded hover:bg-pink-200 hover:text-black transition"
+                    onClick={() => router.push(`/user/nft/${nft._id}/question`)}
                   >
                     View Questions
-                  </Button>
+                  </Button> 
                 ) : (
                   <Button
-                    className="w-full bg-yellow-400 text-block py-2 rounded hover:bg-yellow-300 transition"
+                    className="mt-2 w-full bg-yellow-400 text-block text-black py-2 rounded hover:bg-yellow-300 transition"
                     onClick={() => {
                       if (!walletAddress) {
                         toast.info("Please connect your wallet first"), {

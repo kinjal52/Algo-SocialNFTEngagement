@@ -17,7 +17,7 @@ export default function AdminLayout({
         <main
             suppressHydrationWarning
             className={cn(
-                "min-h-screen bg-background text-foreground font-sans antialiased"
+                "bg-background text-foreground font-sans antialiased w-full"
             )}
         >
             {/* <div className="mt-5"> */}
