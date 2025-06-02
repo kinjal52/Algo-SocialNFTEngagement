@@ -2,27 +2,27 @@
 
 
 ## Module Description  
-The **Social NFT Comments & Engagement** component enhances NFT marketplaces by allowing users to **comment, like, and discuss NFTs directly on the platform**. This feature fosters community engagement, improves user retention, and creates a more interactive NFT experience.
+The **NFT Listing & Real-Time Q&A Chat Module** enables users to mint NFTs on the **Algorand blockchain**, store metadata on **IPFS**, and engage in **real-time conversations** between potential buyers and NFT creators. This module enhances trust and transparency by allowing on-platform discussions.
 
 ## Features  
-- **Commenting System** – Users can leave comments on NFTs.  
-- **Like System** – Users can like comments to highlight valuable discussions.  
-- **Creator Q&A** – Buyers can ask questions, and NFT creators can respond.  
-- **Wallet-Based Authentication** – Users must sign in via Web3 wallets.  
-- **Real-Time Updates** – Comments and likes update instantly.  
-- **Moderation Tools** – NFT owners can manage discussions, delete comments, or report spam.  
+- **NFT Minting** – Upload and mint NFTs on the Algorand blockchain.  
+- **IPFS Integration** – Decentralized storage for NFT media using Pinata.  
+- **Real-Time Q&A Chat** – Buyers can ask questions; creators can respond.  
+- **Socket.IO Integration** – Live chat powered by WebSocket rooms per NFT.  
+- **NFT Listings** – View all NFTs and their associated discussions.
+ 
  
 ## Problem Statement and Proposed Solution
 
 ### Problem Statement
-  -	The majority of NFT marketplaces are transactional instead of interactive, giving buyers little information about NFTs aside from simple descriptions. 
-  -	NFT conversations take place on off-platform channels such as Discord and Twitter, resulting in broken engagement and lower marketplace retention. 
-  -	Furthermore, the absence of direct interaction between buyers and creators lowers trust in NFT buying
+- Most NFT platforms are transactional with no direct communication between buyers and sellers.
+- Conversations about NFTs happen off-platform, fragmenting engagement and trust.
+- Lack of creator interaction reduces confidence in NFT purchases.
 
 ### Proposed Solution
-  -	Enable users to discuss, ask questions, and interact with NFTs directly on the marketplace.
-  -	Increase buyer confidence by allowing real-time Q&A with creators.
-  -	Build a stronger marketplace community, transforming NFTs from mere digital assets into meaningful, interactive experiences that connect and engage users.
+- Enable real-time, on-platform conversations via a Q&A module.
+- Increase trust by allowing buyers to interact directly with NFT creators.
+- Store NFT metadata on-chain (Algorand) and media on IPFS for full decentralization.
 
 ## Technical Architecture Overview
 
@@ -36,12 +36,13 @@ The **Social NFT Comments & Engagement** component enhances NFT marketplaces by 
 | **Storage**   | MongoDB (Comments, Likes) / IPFS (Decentralized Storage) |
 
 ### System Flow  
-1. User connects wallet.  
-2. User posts a comment under an NFT.  
-3. Backend verifies wallet authentication and stores comment in MongoDB.  
-4. Other users can **like, reply, or report** comments.  
-5. NFT creator can **respond to buyer questions** directly.  
-6. **Moderation tools** allow NFT owners to manage discussions.
+1. Creator uploads an image + metadata → sent to backend.
+2. Backend uploads the image to IPFS via Pinata.
+3. NFT is minted using Algorand SDK and metadata is stored in MongoDB.
+4. All NFTs are listed via API.
+5. Buyers can select an NFT and post questions in real-time.
+6. Creator responds in a live chat room scoped to the NFT ID.
+7. All Q&A is persisted in MongoDB for traceability.
 
 ## Implementation plan and timeline
 | Phase       | Task                                           | Duration  |
@@ -57,10 +58,9 @@ The **Social NFT Comments & Engagement** component enhances NFT marketplaces by 
 
 ### Marketplace Benefits
 - **Higher User Engagement** – Encourages more interaction with NFTs.  
-- **Increased Trust and Transparency** – Discussions help verify NFT authenticity and value.  
-- **Keeps Users on the Marketplace** – No need to go to Discord or Twitter.  
-- **Stronger Community Building** – Encourages meaningful connections between users.  
+- **Improved Trust** – Buyers can interact with creators directly.
+- **Reduced Off-Platform Leakage** – Keeps users on your marketplace.
 
 ### User Benefits
-- **Buyers** – Gain insights from other users and ask NFT creators questions.  
-- **Sellers/Creators** – Promote NFTs effectively and build credibility in the community. 
+- **Buyers** – Ask questions about NFTs directly before purchase.
+- **Sellers/Creators** – Build credibility and improve buyer conversion through dialogue.
