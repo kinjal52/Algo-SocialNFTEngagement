@@ -9,7 +9,7 @@ const FormData = require('form-data');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
-
+const mongoose = require('mongoose');
 
 
 // Handle BigInt serialization
@@ -23,6 +23,105 @@ function getAlgodClient(network = 'testnet') {
   return new algosdk.Algodv2('', servers[network], 443);
 }
 
+// router.post('/create-nft', upload.single('image'), async (req, res) => {
+//   let txId;
+//   try {
+//     const {
+//       name,
+//       unitName,
+//       note = "Algorand NFT",
+//       network = "testnet",
+//       price,
+//     } = req.body;
+
+//     // Validate fields
+//     if (!name || !unitName || !req.file) {
+//       return res.status(400).json({ success: false, error: "Missing required fields or image" });
+//     }
+
+//     // Upload to Pinata
+//     const filePath = req.file.path;
+//     const fileStream = fs.createReadStream(filePath);
+//     const data = new FormData();
+//     data.append('file', fileStream);
+
+//     const pinataResponse = await axios.post('https://api.pinata.cloud/pinning/pinFileToIPFS', data, {
+//       maxContentLength: Infinity,
+//       headers: {
+//         ...data.getHeaders(),
+//         pinata_api_key: process.env.PINATA_API_KEY,
+//         pinata_secret_api_key: process.env.PINATA_SECRET_API_KEY,
+//       }
+//     });
+
+//     const ipfsHash = pinataResponse.data.IpfsHash;
+//     const assetURL = `ipfs://${ipfsHash}`;
+
+//     // Clean up temp file
+//     fs.unlinkSync(filePath);
+
+//     const account = algosdk.mnemonicToSecretKey(process.env.MNEMONIC);
+//     console.log("account", account.addr);
+
+//     const algodClient = getAlgodClient(network);
+//     const suggestedParams = await algodClient.getTransactionParams().do();
+
+//     const txn = algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
+//       sender: account.addr,
+//       suggestedParams,
+//       assetName: name,
+//       unitName: unitName,
+//       assetURL,
+//       manager: account.addr,
+//       reserve: account.addr,
+//       freeze: account.addr,
+//       clawback: account.addr,
+//       total: 1,
+//       decimals: 0,
+//       note: new TextEncoder().encode(note),
+//       defaultFrozen: false
+//     });
+
+//     const signedTxn = txn.signTxn(account.sk);
+//     txId = txn.txID().toString();
+//     await algodClient.sendRawTransaction(signedTxn).do();
+//     const result = await algosdk.waitForConfirmation(algodClient, txId, 10);
+
+//     if (!result.assetIndex) {
+//       throw new Error("Asset creation failed - no asset ID returned");
+//     }
+
+//     await NFT.create({
+//       assetId: result.assetIndex.toString(),
+//       name,
+//       url: assetURL,
+//       ownerAddress: account.addr.toString(),
+//       description: note,
+//       minting: 'Algorand Testnet',
+//       price: price,
+//       creator: account.addr.toString()
+//     });
+
+//     res.json({
+//       success: true,
+//       assetId: result.assetIndex,
+//       transactionId: txId,
+//       explorerUrl: `https://lora.algokit.io/testnet/asset/${result.assetIndex}`
+//     });
+
+//   } catch (error) {
+//     console.error(`Error in transaction ${txId || 'N/A'}:`, error);
+//     res.status(500).json({
+//       success: false,
+//       error: error.message,
+//       transactionId: txId || 'N/A',
+//     });
+//   }
+// });
+
+
+// 2. List all NFTs
+
 router.post('/create-nft', upload.single('image'), async (req, res) => {
   let txId;
   try {
@@ -32,11 +131,17 @@ router.post('/create-nft', upload.single('image'), async (req, res) => {
       note = "Algorand NFT",
       network = "testnet",
       price,
+      creator, // New field from frontend
     } = req.body;
 
     // Validate fields
-    if (!name || !unitName || !req.file) {
-      return res.status(400).json({ success: false, error: "Missing required fields or image" });
+    if (!name || !unitName || !req.file || !creator) {
+      return res.status(400).json({ success: false, error: "Missing required fields, image, or creator address" });
+    }
+
+    // Validate creator address
+    if (!algosdk.isValidAddress(creator)) {
+      return res.status(400).json({ success: false, error: "Invalid creator address" });
     }
 
     // Upload to Pinata
@@ -51,7 +156,7 @@ router.post('/create-nft', upload.single('image'), async (req, res) => {
         ...data.getHeaders(),
         pinata_api_key: process.env.PINATA_API_KEY,
         pinata_secret_api_key: process.env.PINATA_SECRET_API_KEY,
-      }
+      },
     });
 
     const ipfsHash = pinataResponse.data.IpfsHash;
@@ -60,9 +165,7 @@ router.post('/create-nft', upload.single('image'), async (req, res) => {
     // Clean up temp file
     fs.unlinkSync(filePath);
 
-    const account = algosdk.mnemonicToSecretKey(process.env.MNEMONIC);
-    console.log("account", account.addr);
-
+    const account = algosdk.mnemonicToSecretKey(process.env.MNEMONIC); // Still using backend key for signing
     const algodClient = getAlgodClient(network);
     const suggestedParams = await algodClient.getTransactionParams().do();
 
@@ -79,7 +182,7 @@ router.post('/create-nft', upload.single('image'), async (req, res) => {
       total: 1,
       decimals: 0,
       note: new TextEncoder().encode(note),
-      defaultFrozen: false
+      defaultFrozen: false,
     });
 
     const signedTxn = txn.signTxn(account.sk);
@@ -95,20 +198,19 @@ router.post('/create-nft', upload.single('image'), async (req, res) => {
       assetId: result.assetIndex.toString(),
       name,
       url: assetURL,
-      ownerAddress: account.addr.toString(),
+      ownerAddress: creator, // Use frontend-provided creator address
       description: note,
       minting: 'Algorand Testnet',
       price: price,
-      creator: account.addr.toString()
+      creator: creator,
     });
 
     res.json({
       success: true,
       assetId: result.assetIndex,
       transactionId: txId,
-      explorerUrl: `https://lora.algokit.io/testnet/asset/${result.assetIndex}`
+      explorerUrl: `https://lora.algokit.io/testnet/asset/${result.assetIndex}`,
     });
-
   } catch (error) {
     console.error(`Error in transaction ${txId || 'N/A'}:`, error);
     res.status(500).json({
@@ -119,8 +221,6 @@ router.post('/create-nft', upload.single('image'), async (req, res) => {
   }
 });
 
-
-// 2. List all NFTs
 router.get("/allnfts", async (req, res) => {
   try {
     const nfts = await NFT.find();
@@ -221,7 +321,7 @@ router.post("/reply", async (req, res) => {
     const io = req.io;
     // io.to(original.nftId).emit("newMessage", reply); // for reply route
     console.log("Emitting reply to room:", original.nftId.toString(), reply);
-io.to(original.nftId.toString()).emit("newMessage", reply);
+    io.to(original.nftId.toString()).emit("newMessage", reply);
 
 
 

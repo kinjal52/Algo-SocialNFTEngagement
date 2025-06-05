@@ -29,9 +29,10 @@ export default function Navbar() {
 
   const handleLogout = () => {
     localStorage.removeItem("walletAddress");
+    localStorage.clear();
     setWalletAddress(null);
     setDrawerOpen(false);
-    router.push("/"); 
+    router.push("/");
   };
 
   const handleCopy = () => {
@@ -69,14 +70,23 @@ export default function Navbar() {
           />
         </div>
 
+
+
         {/* Buttons & Icons */}
         <div className="flex items-center gap-6 relative">
 
+          <Button className="bg-lime-300 text-black hover:bg-lime-500 rounded-sm"
+          onClick={()=>{
+            router.push("/user/nft/create-nft")
+          }}
+          >Create Nft</Button>
+
           {!walletAddress ? (
-            <Button 
-              className="px-4 py-3 rounded-md bg-sky-500 hover:bg-sky-300 hover:text-black text-white flex items-center gap-2"              
-              onClick={() => {router.push("/"); 
-    }}
+            <Button
+              className="px-4 py-3 rounded-md bg-sky-500 hover:bg-sky-300 hover:text-black text-white flex items-center gap-2"
+              onClick={() => {
+                router.push("/");
+              }}
             >
               <Wallet className="w-6 h-6" />
               Connect Wallet
