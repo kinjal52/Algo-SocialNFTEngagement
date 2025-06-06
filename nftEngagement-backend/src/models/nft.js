@@ -10,7 +10,8 @@ const nftSchema = new mongoose.Schema({
   description: { type: String, default: 'No description available' },
   verified: { type: Boolean, default: false },
   minting: { type: String, default: 'Algorand Testnet' },
-  price: { type: String, default: '0 ALGO' }
+  price: { type: String, default: '0 ALGO' },
+  transactionId: { type: String },
 }, { timestamps: true });
 
 module.exports = mongoose.model('NFT', nftSchema);

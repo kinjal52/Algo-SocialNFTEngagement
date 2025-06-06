@@ -190,19 +190,39 @@ router.post('/create-nft', upload.single('image'), async (req, res) => {
     await algodClient.sendRawTransaction(signedTxn).do();
     const result = await algosdk.waitForConfirmation(algodClient, txId, 10);
 
-    if (!result.assetIndex) {
+    const assetId = result.assetIndex; // ✅ Extract assetId
+
+
+    if (!assetId) {
       throw new Error("Asset creation failed - no asset ID returned");
     }
+
+    console.log("assetId", assetId);
+
+
+    // Transfer to creator (after opt-in)
+    const transferTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
+      sender: account.addr,
+      receiver: creator,
+      assetIndex: assetId,
+      amount: 1,
+      suggestedParams,
+    });
+    const signedTransferTxn = transferTxn.signTxn(account.sk);
+    const transferTxId = transferTxn.txID().toString();
+    await algodClient.sendRawTransaction(signedTransferTxn).do();
+    await algosdk.waitForConfirmation(algodClient, transferTxId, 10);
 
     await NFT.create({
       assetId: result.assetIndex.toString(),
       name,
       url: assetURL,
-      ownerAddress: creator, // Use frontend-provided creator address
+      ownerAddress: creator,
       description: note,
       minting: 'Algorand Testnet',
       price: price,
       creator: creator,
+      transactionId: txId
     });
 
     res.json({
@@ -220,6 +240,154 @@ router.post('/create-nft', upload.single('image'), async (req, res) => {
     });
   }
 });
+// backend/routes/nft.js
+router.post('/prepare-nft', upload.single('image'), async (req, res) => {
+  try {
+    const { name, unitName, price, creator } = req.body;
+
+    // Validate fields
+    if (!name || !unitName || !req.file || !creator) {
+      return res.status(400).json({ success: false, error: "Missing required fields or image" });
+    }
+
+    // Upload to Pinata
+    const filePath = req.file.path;
+    const fileStream = fs.createReadStream(filePath);
+    const data = new FormData();
+    data.append('file', fileStream);
+
+    const pinataResponse = await axios.post('https://api.pinata.cloud/pinning/pinFileToIPFS', data, {
+      maxContentLength: Infinity,
+      headers: {
+        ...data.getHeaders(),
+        pinata_api_key: process.env.PINATA_API_KEY,
+        pinata_secret_api_key: process.env.PINATA_SECRET_API_KEY,
+      }
+    });
+
+    const ipfsHash = pinataResponse.data.IpfsHash;
+    const assetURL = `ipfs://${ipfsHash}`;
+
+    // Clean up temp file
+    fs.unlinkSync(filePath);
+
+    // Create unsigned transaction with user's address
+    const algodClient = getAlgodClient('testnet');
+    const suggestedParams = await algodClient.getTransactionParams().do();
+
+    const txn = algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
+      sender: creator,
+      suggestedParams,
+      assetName: name,
+      unitName: unitName,
+      assetURL,
+      manager: creator,
+      reserve: creator,
+      freeze: creator,
+      clawback: creator,
+      total: 1,
+      decimals: 0,
+      note: new TextEncoder().encode('Algorand NFT'),
+      defaultFrozen: false
+    });
+
+    // Encode transaction to base64 for Pera Wallet
+    const unsignedTx = Buffer.from(txn.toByte()).toString('base64');
+    console.log("Unsigned Transaction:", unsignedTx); // Debug log
+
+    res.json({ unsignedTx, assetURL });
+  } catch (error) {
+    console.error('Error preparing NFT:', error);
+    res.status(500).json({ error: 'Failed to prepare NFT' });
+  }
+});
+
+// Broadcast signed transaction and save NFT
+router.post('/broadcast-nft', async (req, res) => {
+  try {
+    const { signedTx, assetURL, name, unitName, price, creator } = req.body;
+    console.log('Received Request Body:', req.body); // Debug log
+    console.log('Signed Transaction (Base64):', signedTx); // Debug log
+    console.log('Type of signedTx:', typeof signedTx); // Debug log
+
+    // Validate input
+    if (!signedTx || typeof signedTx !== 'string') {
+      throw new Error('Invalid signed transaction: must be a non-empty base64-encoded string.');
+    }
+
+    // Verify base64 format
+    if (!/^[A-Za-z0-9+/=]+$/.test(signedTx)) {
+      throw new Error('Invalid base64 string: contains invalid characters.');
+    }
+
+    // Decode base64 to Buffer
+    let signedTxBuffer;
+    try {
+      signedTxBuffer = Buffer.from(signedTx, 'base64');
+    } catch (error) {
+      throw new Error(`Failed to decode base64 string: ${error.message}`);
+    }
+
+    const algodClient = getAlgodClient('testnet');
+
+    // Check account balance
+    const accountInfo = await algodClient.accountInformation(creator).do();
+    console.log('Account Balance (microAlgos):', accountInfo.amount); // Debug balance
+    const minBalance = 101000; // Minimum balance for 0.001 ALGO (fee) + 0.1 ALGO (asset creation)
+    if (accountInfo.amount < minBalance) {
+      throw new Error(`Insufficient balance: Account has ${accountInfo.amount / 1e6} ALGO, requires at least ${minBalance / 1e6} ALGO.`);
+    }
+
+    // Broadcast transaction
+    console.log('Sending Transaction to Algod...');
+    let txIdResponse;
+    try {
+      txIdResponse = await algodClient.sendRawTransaction(signedTxBuffer).do();
+      console.log('SendRawTransaction Response:', txIdResponse); 
+    } catch (error) {
+      throw new Error(`Failed to broadcast transaction: ${error.message}`);
+    }
+
+    const txId = txIdResponse.txid; // Corrected to txid (lowercase)
+    if (!txId) {
+      throw new Error('No transaction ID returned from sendRawTransaction.');
+    }
+
+    // Wait for confirmation
+    console.log('Waiting for confirmation...');
+    const result = await algosdk.waitForConfirmation(algodClient, txId, 20); 
+
+    if (!result.assetIndex) {
+      throw new Error('Asset creation failed - no asset ID returned');
+    }
+
+    // Save to database
+    await NFT.create({
+      assetId: result.assetIndex.toString(),
+      name,
+      url: assetURL,
+      unitName,
+      ownerAddress: creator,
+      description: 'Algorand NFT',
+      minting: 'Algorand Testnet',
+      price,
+      creator,
+      transactionId: txId
+    });
+
+    res.json({
+      success: true,
+      assetId: result.assetIndex,
+      transactionId: txId,
+      explorerUrl: `https://lora.testnet.algokit.io/explorer/asset/${result.assetIndex}`,
+    });
+  } catch (error) {
+    console.error('Error broadcasting NFT:', error);
+    res.status(500).json({ error: 'Failed to broadcast NFT', details: error.message });
+  }
+});
+
+
 
 router.get("/allnfts", async (req, res) => {
   try {

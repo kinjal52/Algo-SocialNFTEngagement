@@ -39,18 +39,18 @@ export const NFTList = ({ nftData }: { nftData: Paginatednft }) => {
     const storedWallet = localStorage.getItem("walletAddress");
     setWalletAddress(storedWallet);
 
-    if (storedWallet) {
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/nft/notifications/${storedWallet}`)
-        .then((res) => res.json())
-        .then((data) => {
-          const notifMap: { [key: string]: number } = {};
-          data.forEach((item: any) => {
-            notifMap[item._id] = item.questionCount;
-          });
-          setNotifications(notifMap);
-        })
-        .catch((err) => console.error("Notification fetch error:", err));
-    }
+    // if (storedWallet) {
+    //   fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/nft/notifications/${storedWallet}`)
+    //     .then((res) => res.json())
+    //     .then((data) => {
+    //       const notifMap: { [key: string]: number } = {};
+    //       data.forEach((item: any) => {
+    //         notifMap[item._id] = item.questionCount;
+    //       });
+    //       setNotifications(notifMap);
+    //     })
+    //     .catch((err) => console.error("Notification fetch error:", err));
+    // }
   }, []);
 
 
