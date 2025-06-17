@@ -122,124 +122,124 @@ function getAlgodClient(network = 'testnet') {
 
 // 2. List all NFTs
 
-router.post('/create-nft', upload.single('image'), async (req, res) => {
-  let txId;
-  try {
-    const {
-      name,
-      unitName,
-      note = "Algorand NFT",
-      network = "testnet",
-      price,
-      creator, // New field from frontend
-    } = req.body;
+// router.post('/create-nft', upload.single('image'), async (req, res) => {
+//   let txId;
+//   try {
+//     const {
+//       name,
+//       unitName,
+//       note = "Algorand NFT",
+//       network = "testnet",
+//       price,
+//       creator, // New field from frontend
+//     } = req.body;
 
-    // Validate fields
-    if (!name || !unitName || !req.file || !creator) {
-      return res.status(400).json({ success: false, error: "Missing required fields, image, or creator address" });
-    }
+//     // Validate fields
+//     if (!name || !unitName || !req.file || !creator) {
+//       return res.status(400).json({ success: false, error: "Missing required fields, image, or creator address" });
+//     }
 
-    // Validate creator address
-    if (!algosdk.isValidAddress(creator)) {
-      return res.status(400).json({ success: false, error: "Invalid creator address" });
-    }
+//     // Validate creator address
+//     if (!algosdk.isValidAddress(creator)) {
+//       return res.status(400).json({ success: false, error: "Invalid creator address" });
+//     }
 
-    // Upload to Pinata
-    const filePath = req.file.path;
-    const fileStream = fs.createReadStream(filePath);
-    const data = new FormData();
-    data.append('file', fileStream);
+//     // Upload to Pinata
+//     const filePath = req.file.path;
+//     const fileStream = fs.createReadStream(filePath);
+//     const data = new FormData();
+//     data.append('file', fileStream);
 
-    const pinataResponse = await axios.post('https://api.pinata.cloud/pinning/pinFileToIPFS', data, {
-      maxContentLength: Infinity,
-      headers: {
-        ...data.getHeaders(),
-        pinata_api_key: process.env.PINATA_API_KEY,
-        pinata_secret_api_key: process.env.PINATA_SECRET_API_KEY,
-      },
-    });
+//     const pinataResponse = await axios.post('https://api.pinata.cloud/pinning/pinFileToIPFS', data, {
+//       maxContentLength: Infinity,
+//       headers: {
+//         ...data.getHeaders(),
+//         pinata_api_key: process.env.PINATA_API_KEY,
+//         pinata_secret_api_key: process.env.PINATA_SECRET_API_KEY,
+//       },
+//     });
 
-    const ipfsHash = pinataResponse.data.IpfsHash;
-    const assetURL = `ipfs://${ipfsHash}`;
+//     const ipfsHash = pinataResponse.data.IpfsHash;
+//     const assetURL = `ipfs://${ipfsHash}`;
 
-    // Clean up temp file
-    fs.unlinkSync(filePath);
+//     // Clean up temp file
+//     fs.unlinkSync(filePath);
 
-    const account = algosdk.mnemonicToSecretKey(process.env.MNEMONIC); // Still using backend key for signing
-    const algodClient = getAlgodClient(network);
-    const suggestedParams = await algodClient.getTransactionParams().do();
+//     const account = algosdk.mnemonicToSecretKey(process.env.MNEMONIC); // Still using backend key for signing
+//     const algodClient = getAlgodClient(network);
+//     const suggestedParams = await algodClient.getTransactionParams().do();
 
-    const txn = algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
-      sender: account.addr,
-      suggestedParams,
-      assetName: name,
-      unitName: unitName,
-      assetURL,
-      manager: account.addr,
-      reserve: account.addr,
-      freeze: account.addr,
-      clawback: account.addr,
-      total: 1,
-      decimals: 0,
-      note: new TextEncoder().encode(note),
-      defaultFrozen: false,
-    });
+//     const txn = algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
+//       sender: account.addr,
+//       suggestedParams,
+//       assetName: name,
+//       unitName: unitName,
+//       assetURL,
+//       manager: account.addr,
+//       reserve: account.addr,
+//       freeze: account.addr,
+//       clawback: account.addr,
+//       total: 1,
+//       decimals: 0,
+//       note: new TextEncoder().encode(note),
+//       defaultFrozen: false,
+//     });
 
-    const signedTxn = txn.signTxn(account.sk);
-    txId = txn.txID().toString();
-    await algodClient.sendRawTransaction(signedTxn).do();
-    const result = await algosdk.waitForConfirmation(algodClient, txId, 10);
+//     const signedTxn = txn.signTxn(account.sk);
+//     txId = txn.txID().toString();
+//     await algodClient.sendRawTransaction(signedTxn).do();
+//     const result = await algosdk.waitForConfirmation(algodClient, txId, 10);
 
-    const assetId = result.assetIndex; // ✅ Extract assetId
-
-
-    if (!assetId) {
-      throw new Error("Asset creation failed - no asset ID returned");
-    }
-
-    console.log("assetId", assetId);
+//     const assetId = result.assetIndex; // ✅ Extract assetId
 
 
-    // Transfer to creator (after opt-in)
-    const transferTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
-      sender: account.addr,
-      receiver: creator,
-      assetIndex: assetId,
-      amount: 1,
-      suggestedParams,
-    });
-    const signedTransferTxn = transferTxn.signTxn(account.sk);
-    const transferTxId = transferTxn.txID().toString();
-    await algodClient.sendRawTransaction(signedTransferTxn).do();
-    await algosdk.waitForConfirmation(algodClient, transferTxId, 10);
+//     if (!assetId) {
+//       throw new Error("Asset creation failed - no asset ID returned");
+//     }
 
-    await NFT.create({
-      assetId: result.assetIndex.toString(),
-      name,
-      url: assetURL,
-      ownerAddress: creator,
-      description: note,
-      minting: 'Algorand Testnet',
-      price: price,
-      creator: creator,
-      transactionId: txId
-    });
+//     console.log("assetId", assetId);
 
-    res.json({
-      success: true,
-      assetId: result.assetIndex,
-      transactionId: txId,
-      explorerUrl: `https://lora.algokit.io/testnet/asset/${result.assetIndex}`,
-    });
-  } catch (error) {
-    console.error(`Error in transaction ${txId || 'N/A'}:`, error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-      transactionId: txId || 'N/A',
-    });
-  }
-});
+
+//     // Transfer to creator (after opt-in)
+//     const transferTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
+//       sender: account.addr,
+//       receiver: creator,
+//       assetIndex: assetId,
+//       amount: 1,
+//       suggestedParams,
+//     });
+//     const signedTransferTxn = transferTxn.signTxn(account.sk);
+//     const transferTxId = transferTxn.txID().toString();
+//     await algodClient.sendRawTransaction(signedTransferTxn).do();
+//     await algosdk.waitForConfirmation(algodClient, transferTxId, 10);
+
+//     await NFT.create({
+//       assetId: result.assetIndex.toString(),
+//       name,
+//       url: assetURL,
+//       ownerAddress: creator,
+//       description: note,
+//       minting: 'Algorand Testnet',
+//       price: price,
+//       creator: creator,
+//       transactionId: txId
+//     });
+
+//     res.json({
+//       success: true,
+//       assetId: result.assetIndex,
+//       transactionId: txId,
+//       explorerUrl: `https://lora.algokit.io/testnet/asset/${result.assetIndex}`,
+//     });
+//   } catch (error) {
+//     console.error(`Error in transaction ${txId || 'N/A'}:`, error);
+//     res.status(500).json({
+//       success: false,
+//       error: error.message,
+//       transactionId: txId || 'N/A',
+//     });
+//   }
+// });
 // backend/routes/nft.js
 router.post('/prepare-nft', upload.single('image'), async (req, res) => {
   try {
@@ -293,7 +293,7 @@ router.post('/prepare-nft', upload.single('image'), async (req, res) => {
 
     // Encode transaction to base64 for Pera Wallet
     const unsignedTx = Buffer.from(txn.toByte()).toString('base64');
-    console.log("Unsigned Transaction:", unsignedTx); // Debug log
+    console.log("Unsigned Transaction:", unsignedTx); 
 
     res.json({ unsignedTx, assetURL });
   } catch (error) {

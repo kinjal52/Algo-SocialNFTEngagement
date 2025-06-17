@@ -1,13 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { BadgeCheck } from "lucide-react";
+import { BadgeCheck, Copy } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bounce, toast } from "react-toastify";
 import { io, Socket } from "socket.io-client";
 import { Button } from "../ui/button";
 import { Card, CardContent } from "../ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
 
 
 export interface nftData {
@@ -20,6 +21,8 @@ export interface nftData {
   verified: boolean;
   minting: string;
   price: string;
+  assetId: string,
+  transactionId?: string
 }
 
 export interface Paginatednft {
@@ -73,6 +76,7 @@ export const NFTList = ({ nftData }: { nftData: Paginatednft }) => {
           console.log("isOwner", isOwner);
           console.log("walletAddress", walletAddress);
           console.log("nft.ownerAddress", nft.ownerAddress);
+          console.log("nft", nft);
 
           return (
             <Card
@@ -110,41 +114,95 @@ export const NFTList = ({ nftData }: { nftData: Paginatednft }) => {
                   </div>
                 </div>
 
-                {/* Conditional Button */}
-                {isOwner ? (
-                  <Button
-                    // style={{ backgroundColor: "salmon", color: "black" }}
-                    // className="w-full py-2 mt-3 rounded "
-                    className="w-full bg-pink-400 text-block py-2 mt-2 rounded hover:bg-pink-200 hover:text-black transition"
-                    onClick={() => router.push(`/user/nft/${nft._id}/question`)}
-                  >
-                    View Questions
-                  </Button> 
-                ) : (
-                  <Button
-                    className="mt-2 w-full bg-yellow-400 text-block text-black py-2 rounded hover:bg-yellow-300 transition"
-                    onClick={() => {
-                      if (!walletAddress) {
-                        toast.info("Please connect your wallet first"), {
-                          position: "top-right",
-                          autoClose: 5000,
-                          hideProgressBar: false,
-                          closeOnClick: true,
-                          pauseOnHover: true,
-                          draggable: true,
-                          progress: undefined,
-                          theme: "light",
-                          transition: Bounce,
-                        };
-                        router.push("/"); // your wallet connection page
-                      } else {
-                        router.push(`/user/chat/${nft._id}`);
-                      }
-                    }}
-                  >
-                    Ask Question
-                  </Button>
-                )}
+                <div className="flex justify-center gap-2">
+                  {isOwner && (
+                    <Dialog>
+                    <DialogTrigger asChild>
+                      <Button
+                        className=" w-full bg-indigo-500 text-block py-2 mt-2 rounded hover:bg-indigo-300 hover:text-black transition"
+                      >
+                        View Details
+                      </Button>
+                    </DialogTrigger>
+
+                    <DialogContent className="bg-white text-black rounded-xl">
+                      <DialogHeader>
+                        <DialogTitle className="text-xl font-bold">NFT Details</DialogTitle>
+                      </DialogHeader>
+
+                      <div className="space-y-4 mt-4 text-sm">
+                        {/* Asset ID */}
+                        <div className="flex items-center justify-between gap-2">
+                          <div>
+                            <span className="font-semibold">Asset ID:</span>{" "}
+                            {nft.assetId || "N/A"}
+                          </div>
+                          <Copy
+                            className="w-4 h-4 text-black cursor-pointer"
+                            onClick={() => {
+                              navigator.clipboard.writeText(nft.assetId || "");
+                              toast.success("Asset ID copied!");
+                            }}
+                          />
+                        </div>
+
+                        {/* Transaction ID */}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="max-w-[200px] truncate">
+                            <span className="font-semibold">Transaction ID:</span>{" "}
+                            {nft.transactionId || "N/A"}
+                          </div>
+                          <Copy
+                            className="w-4 h-4 text-black cursor-pointer"
+                            onClick={() => {
+                              navigator.clipboard.writeText(nft.transactionId || "");
+                              toast.success("Transaction ID copied!");
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>)}
+
+
+
+
+                  {/* Conditional Button */}
+                  {isOwner ? (
+                    <Button
+                      // style={{ backgroundColor: "salmon", color: "black" }}
+                      // className="w-full py-2 mt-3 rounded "
+                      className="w-full bg-pink-400 text-block py-2 mt-2 rounded hover:bg-pink-200 hover:text-black transition"
+                      onClick={() => router.push(`/user/nft/${nft._id}/question`)}
+                    >
+                      View Questions
+                    </Button>
+                  ) : (
+                    <Button
+                      className="mt-2 w-full bg-yellow-400 text-block text-black py-2 rounded hover:bg-yellow-300 transition"
+                      onClick={() => {
+                        if (!walletAddress) {
+                          toast.info("Please connect your wallet first"), {
+                            position: "top-right",
+                            autoClose: 5000,
+                            hideProgressBar: false,
+                            closeOnClick: true,
+                            pauseOnHover: true,
+                            draggable: true,
+                            progress: undefined,
+                            theme: "light",
+                            transition: Bounce,
+                          };
+                          router.push("/"); // your wallet connection page
+                        } else {
+                          router.push(`/user/chat/${nft._id}`);
+                        }
+                      }}
+                    >
+                      Ask Question
+                    </Button>
+                  )}
+                </div>
 
 
               </CardContent>

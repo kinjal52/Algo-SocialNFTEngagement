@@ -13,7 +13,8 @@ export interface nftData {
   verified: boolean;
   minting: string;
   price: string;
-  assetId: number; // Added to match backend
+  assetId: string; 
+  transactionId?:string// Added to match backend
 }
 
 export interface Paginatednft {
@@ -54,7 +55,7 @@ export default async function UserNftPage() {
 
             return {
               _id: nft._id || nft.id,
-              assetId: Number(nft.assetId),
+              assetId: nft.assetId||" ",
               creator: nft.creator || "Unknown",
               ownerAddress: nft.creator,
               name: nft.name || "Unnamed NFT",
@@ -63,6 +64,7 @@ export default async function UserNftPage() {
               verified: nft.verified ?? false,
               minting: nft.minting || "Algorand Testnet",
               price: nft.price || "0 ALGO",
+              transactionId: nft.transactionId || "",
             };
           })
         : []
