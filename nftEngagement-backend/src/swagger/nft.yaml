@@ -1,0 +1,33 @@
+paths:
+  /create-nft:
+    post:
+      summary: Mint a new NFT on Algorand
+      tags: [NFT]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - name
+                - unitName
+                - image
+              properties:
+                name:
+                  type: string
+                unitName:
+                  type: string
+                note:
+                  type: string
+                network:
+                  type: string
+                  default: testnet
+                price:
+                  type: string
+                image:
+                  type: string
+                  format: binary
+      responses:
+        200:
+          description: NFT minted successfully

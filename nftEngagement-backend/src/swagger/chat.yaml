@@ -1,0 +1,79 @@
+paths:
+  /ask:
+    post:
+      summary: Ask a question about an NFT
+      tags: [Chat]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nftId
+                - askerAddress
+                - message
+              properties:
+                nftId:
+                  type: string
+                askerAddress:
+                  type: string
+                message:
+                  type: string
+      responses:
+        201:
+          description: Question submitted
+
+    /chat/{nftId}:
+    get:
+      summary: Get all chat messages for a specific NFT
+      tags: [Chat]
+      parameters:
+        - in: path
+          name: nftId
+          required: true
+          schema:
+            type: string
+          description: The ID of the NFT
+      responses:
+        '200':
+          description: Array of messages for the NFT
+        '400':
+          description: Missing NFT ID
+        '500':
+          description: Internal server error
+
+  /questions/owner/{ownerAddress}:
+    get:
+      summary: Get all questions for NFTs owned by a specific address
+      tags: [Chat]
+      parameters:
+        - in: path
+          name: ownerAddress
+          required: true
+          schema:
+            type: string
+          description: Wallet address of the NFT creator
+      responses:
+        '200':
+          description: List of buyer questions
+        '500':
+          description: Internal server error
+
+  /{nftId}/buyers:
+    get:
+      summary: Get wallet addresses of all buyers who asked questions for a specific NFT
+      tags: [Chat]
+      parameters:
+        - in: path
+          name: nftId
+          required: true
+          schema:
+            type: string
+          description: The ID of the NFT
+      responses:
+        '200':
+          description: List of wallet addresses
+        '500':
+          description: Failed to fetch buyers
+

@@ -8,7 +8,8 @@ const path = require("path");
 require("dotenv").config();
 const { initSocket } = require('./socket');
 const { getIO } = require('./socket');
-
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./swagger');
 
 const app = express();
 const server = http.createServer(app); 
@@ -20,6 +21,8 @@ initSocket(server);
 app.use(cors({ origin: "http://localhost:3000" }));
 app.use(express.json());
 
+// Swagger setup
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 
 const backendRoot = path.join(__dirname, "..");
